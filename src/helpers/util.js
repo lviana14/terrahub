@@ -1,17 +1,17 @@
 'use strict';
 
 const fs = require('fs');
+const Twig = require('twig');
 const fse = require('fs-extra');
 const yaml = require('js-yaml');
-const Twig = require('twig');
-const ReadLine = require('readline');
-const mergeWith = require('lodash.mergewith');
-const { spawn } = require('child-process-promise');
-const { createHash } = require('crypto');
-const { EOL, platform, cpus } = require('os');
-const childProcess = require('child_process');
 const logger = require('./logger');
 const treeify = require('treeify');
+const ReadLine = require('readline');
+const { createHash } = require('crypto');
+const { EOL, platform, cpus } = require('os');
+const mergeWith = require('lodash.mergewith');
+const { execSync } = require('child_process');
+const { spawn } = require('child-process-promise');
 
 const rl = ReadLine.createInterface({
   input: process.stdin,
@@ -312,7 +312,7 @@ function physicalCpuCount() {
    * @return {String}
    */
   function exec(command) {
-    return childProcess.execSync(command, { encoding: 'utf8' });
+    return execSync(command, { encoding: 'utf8' });
   }
 
   let amount;
@@ -364,6 +364,35 @@ function handleGitDiffError(error, appPath) {
 }
 
 /**
+ * Returns null in case of error
+ * @param {String} cwd
+ * @return {{ url: String, provider: String, repo: String }|null}
+ */
+function getGitOrigin(cwd = '') {
+  try {
+    const origin = execSync('git remote get-url origin', { cwd: cwd || process.cwd(), stdio: 'pipe' }).toString();
+
+    const isHttp = !!url.parse(origin).host;
+    // supports gitlab/github/bitbucket
+    // @todo: add azure, google, amazon support
+    const httpRegex = /\/\/(?:.*@)?([^.]+).*?\/([^.]*)/;
+    const sshRegex = /@([^.]*).*:(.*).*(?=\.)/;
+
+    const [, provider, repo] = isHttp ? data.match(httpRegex) : data.match(sshRegex);
+
+    return {
+      url: origin,
+      provider: provider,
+      repo: repo
+    };
+  } catch (error) {
+    logger.debug(error);
+
+    return null;
+  }
+}
+
+/**
  * Public methods
  */
 module.exports = {
@@ -375,15 +404,16 @@ module.exports = {
   jsonToYaml,
   familyTree,
   renderTwig,
+  askQuestion,
+  getGitOrigin,
   promiseSeries,
   yesNoQuestion,
-  askQuestion,
   isAwsNameValid,
-  exponentialBackoff,
-  setTimeoutPromise,
   physicalCpuCount,
+  setTimeoutPromise,
   printConfigAsList,
-  printConfigCommaSeparated,
   askForApprovement,
-  handleGitDiffError
+  handleGitDiffError,
+  exponentialBackoff,
+  printConfigCommaSeparated,
 };

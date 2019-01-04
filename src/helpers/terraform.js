@@ -1,6 +1,7 @@
 'use strict';
 
 const fs = require('fs');
+const url = require('url');
 const path = require('path');
 const fse = require('fs-extra');
 const semver = require('semver');
@@ -8,11 +9,10 @@ const logger = require('./logger');
 const Metadata = require('./metadata');
 const Dictionary = require('./dictionary');
 const Downloader = require('./downloader');
-const { homePath, config, fetch } = require('../parameters');
-const { extend, spawner, exponentialBackoff } = require('../helpers/util');
-const ConfigLoader = require('../config-loader');
 const { execSync } = require('child_process');
-const url = require('url');
+const ConfigLoader = require('../config-loader');
+const { homePath, config, fetch } = require('../parameters');
+const { extend, spawner, exponentialBackoff, getGitOrigin } = require('../helpers/util');
 
 class Terraform {
   /**
@@ -479,15 +479,11 @@ class Terraform {
       return Promise.resolve({});
     }
     try {
-      const urlGet = execSync('git remote get-url origin', { cwd: this._config.project.root, stdio: 'pipe' });
-      const data = Buffer.from(urlGet).toString('utf-8');
-      const isUrl = !!url.parse(data).host;
-      // works for gitlab/github/bitbucket, add azure, google, amazon
-      const urlData = /\/\/(?:.*@)?([^.]+).*?\/([^.]*)/;
-      const sshData = /@([^.]*).*:(.*).*(?=\.)/;
+      const gitOriginData = getGitOrigin(this._config.project.root);
 
-      const [ , provider, repo ] = isUrl ? data.match(urlData) : data.match(sshData);
-      if (repo && provider) {
+      if (gitOriginData) {
+        const { provider, repo } = gitOriginData;
+
         return fetch.get(`thub/variables/retrieve?repoName=${repo}&source=${provider}`).then(json => {
           if (Object.keys(json.data).length) {
             let test = JSON.parse(json.data.env_var);
