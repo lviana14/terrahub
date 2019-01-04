@@ -494,6 +494,8 @@ class Terraform {
           }
         });
       }
+
+      return Promise.resolve({});
     } catch (err) {
       return Promise.resolve({});
     }
