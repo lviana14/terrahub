@@ -9,6 +9,7 @@ const AbstractCommand = require('./abstract-command');
 const { config: { listLimit } } = require('./parameters');
 const ListException = require('./exceptions/list-exception');
 
+
 /**
  * @abstract
  */
@@ -26,6 +27,7 @@ class TerraformCommand extends AbstractCommand {
       .addOption('git-diff', 'g', 'List of components to include (git diff)', Array, [])
       .addOption('var', 'r', 'Variable(s) to be used by terraform', Array, [])
       .addOption('var-file', 'l', 'Variable file(s) to be used by terraform', Array, [])
+      .addOption('dependency', 'd', 'Set dependency strategy ', String, 'auto')
     ;
   }
 
@@ -167,6 +169,9 @@ class TerraformCommand extends AbstractCommand {
     return this.getOption('exclude-regex').map(it => new RegExp(it));
   }
 
+  getDependency() {
+    return this.getOption('dependency');
+  }
   /**
    * @description Returns an array of hashes to include in the execution
    * @return {String[]}
