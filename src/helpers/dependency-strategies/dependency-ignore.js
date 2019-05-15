@@ -1,9 +1,9 @@
 'use strict';
-const DependencyStrategy = require('./dependency-strategy');
+const DependencyStrategy = require('./abstract-dependency-strategy');
 
 class DependencyIgnore extends DependencyStrategy {
 
-  execute() {
+  execute(filteredConfig, fullConfig) {
     const config = this.config;
     const dependencies = this.dependencies;
     let issues = {};

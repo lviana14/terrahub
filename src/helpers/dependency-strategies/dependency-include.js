@@ -1,11 +1,11 @@
 'use strict';
 
 const ConfigLoader = require('../../config-loader');
-const DependencyStrategy = require('./dependency-strategy');
+const DependencyStrategy = require('./abstract-dependency-strategy');
 
 class DependencyInclude extends DependencyStrategy {
 
-  execute() {
+  execute(filteredConfig, fullConfig) {
     const config = this.config;
     const dependencies = this.dependencies;
     let checked = Object.assign({}, this.config);
@@ -33,6 +33,17 @@ class DependencyInclude extends DependencyStrategy {
     });
 
     return Object.assign(this.config, config);
+  }
+
+
+  generateExecutionList(fullConfig, filters = []) {
+    const config = super.generateExecutionList(fullConfig, filters);
+
+    // while () {
+    //
+    // }
+
+    return result;
   }
 }
 

@@ -107,6 +107,17 @@ class TerraformCommand extends AbstractCommand {
     Object.keys(config).forEach(hash => {
       // hash is required in distributor to remove components from dependency table
       result[hash] = Util.extend(config[hash], [cliParams, { hash: hash }]);
+
+      const node = result[hash];
+      const dependsOn = {};
+
+      node.dependsOn.forEach(dep => {
+        const key = ConfigLoader.buildComponentHash(dep);
+
+        dependsOn[key] = null;
+      });
+
+      node.dependsOn = dependsOn;
     });
 
     return result;
@@ -132,15 +143,13 @@ class TerraformCommand extends AbstractCommand {
       exclude.length ? hash => !exclude.includes(config[hash].name) : null
     ].filter(Boolean);
 
-    Object.keys(config)
-      .filter(hash => filters.some(check => !check(hash)))
-      .forEach(hash => { delete config[hash]; });
+    const result = this.getDependencyStrategy().generateExecutionList(config, filters);
 
-    if (!Object.keys(config).length) {
+    if (!Object.keys(result).length) {
       throw new Error(`No components available for the '${this.getName()}' action.`);
     }
 
-    return config;
+    return result;
   }
 
   /**
@@ -217,31 +226,30 @@ class TerraformCommand extends AbstractCommand {
   }
 
   /**
-   * @description Returns config with applied dependency strategy
-   * @param {Object} config
-   * @param {Object} fullConfig
-   * @param {String[]} dependencies
-   * @return {Object}
+   * @return {AbstractDependencyStrategy}
    */
-  getDependency(config, fullConfig, dependencies) {
+  getDependencyStrategy() {
     const option = this.getOption('dependency');
-    let strategy;
 
-    switch (option) {
-      case 'auto':
-        strategy = new DependencyAuto(config, fullConfig, null);
-        break;
-      case 'ignore':
-        strategy = new DependencyIgnore(config, fullConfig, dependencies);
-        break;
-      case 'include':
-        strategy = new DependencyInclude(config, fullConfig, dependencies);
-        break;
+    if (!this._dependencyStrategy) {
+      switch (option) {
+        case 'auto':
+          this._dependencyStrategy = new DependencyAuto();
+          break;
+        case 'ignore':
+          this._dependencyStrategy = new DependencyIgnore();
+          break;
+        case 'include':
+          this._dependencyStrategy = new DependencyInclude();
+          break;
+
+        default:
+          throw new Error('Unknown strategy!');
+      }
     }
 
-    return strategy.execute();
+    return this._dependencyStrategy;
   }
-
 
   /**
    * @param {Object|Array} config
@@ -305,7 +313,6 @@ class TerraformCommand extends AbstractCommand {
     const tree = {};
     const object = Object.assign({}, this.getFilteredConfig());
     const issues = [];
-    const dependencies = [];
     const fullConfig = this.getExtendedConfig();
 
     Object.keys(object).forEach(hash => {
@@ -317,10 +324,6 @@ class TerraformCommand extends AbstractCommand {
 
         if (!fullConfig.hasOwnProperty(key)) {
           issues.push(`'${node.name}' component depends on the component in '${dep}' directory that doesn't exist`);
-        }
-
-        if (!object.hasOwnProperty(key) && !dependencies.includes(key)) {
-          dependencies.push(key);
         }
 
         dependsOn[key] = null;
@@ -335,10 +338,8 @@ class TerraformCommand extends AbstractCommand {
         header: 'TerraHub failed because of the following issues:',
         style: ListException.NUMBER
       });
-
     }
 
-    const config = this.getDependency(tree, fullConfig, dependencies);
     return config;
   }
 
@@ -434,6 +435,7 @@ class TerraformCommand extends AbstractCommand {
     const hashesToCheck = Object.keys(config);
     const checked = Object.assign({}, config);
     const issues = {};
+    const nonExistingIssues = {};
 
     Object.keys(fullConfig).forEach(it => { issues[it] = []; });
 
@@ -441,25 +443,30 @@ class TerraformCommand extends AbstractCommand {
       const hash = hashesToCheck.pop();
       const { dependsOn } = fullConfig[hash];
 
-      dependsOn
-        .map(path => ConfigLoader.buildComponentHash(path))
-        .filter(it => !config.hasOwnProperty(it))
+      Object.keys(dependsOn)
         .forEach(it => {
-          issues[hash].push(it);
+          if (!config.hasOwnProperty(it)) {
+            issues[hash].push(it);
 
-          if (!checked.hasOwnProperty(it)) {
-            checked[it] = null;
-            hashesToCheck.push(it);
+            if (!checked.hasOwnProperty(it)) {
+              checked[it] = null;
+              hashesToCheck.push(it);
+            }
+          } else if (!fullConfig.hasOwnProperty(it)) {
+            nonExistingIssues[hash].push(it);
           }
         });
     }
 
-    return Object.keys(issues).filter(hash => issues[hash].length).map(hash => {
-      const names = issues[hash].map(it => fullConfig[it].name);
+    return [
+      ...Object.keys(issues).filter(hash => issues[hash].length).map(hash => {
+        const names = issues[hash].map(it => fullConfig[it].name);
 
-      return `'${fullConfig[hash].name}' component depends on ${names.map(it => `'${it}'`).join(', ')} ` +
-        `that ${names.length > 1 ? 'are' : 'is'} excluded from execution list`;
-    });
+        return `'${fullConfig[hash].name}' component depends on ${names.map(it => `'${it}'`).join(', ')} ` +
+          `that ${names.length > 1 ? 'are' : 'is'} excluded from execution list`;
+      }),
+      ...Object.keys(nonExistingIssues) //
+    ];
   }
 
   /**

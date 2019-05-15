@@ -418,6 +418,7 @@ class Terraform {
       err => logger.error(this._out(err)),
       data => {
         if (this._showLogs) {
+          console.log(data.constructor.name);
           logger.raw(this._out(data));
         }
       }

@@ -1,10 +1,10 @@
 'use strict';
-const DependencyStrategy = require('./dependency-strategy');
+const DependencyStrategy = require('./abstract-dependency-strategy');
 
 
 class DependencyAuto extends DependencyStrategy {
 
-  execute() {
+  execute(filteredConfig, fullConfig) {
     console.log('implemented Auto strategy');
     return this.config;
   }

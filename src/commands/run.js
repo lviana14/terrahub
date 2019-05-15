@@ -89,7 +89,7 @@ class RunCommand extends TerraformCommand {
       .then(() => !this._isApply ?
         Promise.resolve() :
         distributor.runActions(this._isBuild ? ['build', 'plan', 'apply'] : ['plan', 'apply'], {
-          dependencyDirection: Dictionary.DIRECTION.FORWARD
+          // dependencyDirection: Dictionary.DIRECTION.FORWARD
         })
       )
       .then(() => !this._isDestroy ?
@@ -107,7 +107,7 @@ class RunCommand extends TerraformCommand {
    * @private
    */
   _runCloud(cfg) {
-    const actions = ['prepare', 'init', 'workspaceSelect', 'plan', 'apply'];
+    const actions = ['prepare', 'init', 'workspaceSelect', 'build', 'plan', 'apply'];
     const distributor = new CloudDistributor(cfg);
 
     return distributor.runActions(actions, { dependencyDirection: Dictionary.DIRECTION.FORWARD });
@@ -137,7 +137,7 @@ class RunCommand extends TerraformCommand {
         break;
     }
 
-    this.checkDependencies(config, direction);
+    // this.checkDependencies(config, direction);
   }
 
   /**
