@@ -1,0 +1,13 @@
+
+#EXTM3U
+#PLAYLISTV: pltv-logo="https://firebirdsql.org/file/about/firebird-logo-500.png" pltv-name="lista teste lv" pltv-description="Filmes e Series" pltv-cover="http://www.carbodydesign.com/media/2016/06/The-Art-of-Thumbnail-Sketching-Ferrari-330-P4-Design-Sketch-355x266.jpg" pltv-author="Luciano Viana" pltv-site="XXX" pltv-email="XXX"
+
+
+##################  Cavaleiros do Zodiacos  ########################
+
+#EXTINF:-1 tvg-logo="http://statics.livrariacultura.net.br/products/capas_lg/981/46639981.jpg" group-title="Animes" pltv-subgroup="Cavaleiros do Zodiacos", CZ Episodio 1 
+https://ns561325.ip-54-39-102.net/O/os-cavaleiros-do-zodiaco-dublado/01.mp4
+#EXTINF:-1 tvg-logo="http://statics.livrariacultura.net.br/products/capas_lg/981/46639981.jpg" group-title="Animes" pltv-subgroup="Cavaleiros do Zodiacos", CZ Episodio 2 
+https://ns561325.ip-54-39-102.net/O/os-cavaleiros-do-zodiaco-dublado/02.mp4
+#EXTINF:-1 tvg-logo="http://statics.livrariacultura.net.br/products/capas_lg/981/46639981.jpg" group-title="Animes" pltv-subgroup="Cavaleiros do Zodiacos", CZ Episodio 3 
+https://ns561325.ip-54-39-102.net/O/os-cavaleiros-do-zodiaco-dublado/03.mp4
